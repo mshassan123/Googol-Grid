@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>The Googol Grid</title>
+<style>
+body { background-color: #050505; color: #ccc; font-family: 'Courier New', Courier, monospace; margin: 0; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; user-select: none; }
+
+#container { width: 95vw; max-width: 1200px; text-align: center; }
+
+/* Title */
+h1 { font-size: 20px; color: #333; letter-spacing: 6px; margin-bottom: 10px; text-transform: uppercase; border-bottom: 1px solid #111; padding-bottom: 10px; display: inline-block; }
+
+/* Stopwatch */
+#stopwatch { font-size: 32px; color: #0f0; margin-bottom: 30px; text-shadow: 0 0 10px rgba(0, 255, 0, 0.2); font-weight: bold; }
+
+/* The Grid Logic */
+/* Direction: RTL ensures Gear 1 is on the Right, Gear 100 is on the Left (Like a number) */
+#gear-grid { display: flex; flex-wrap: wrap; justify-content: center; direction: rtl; gap: 4px; margin-bottom: 30px; }
+
+/* Individual Gear Unit */
+.gear-unit { width: 50px; height: 60px; background: #111; border: 1px solid #222; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.1s; position: relative; }
+.gear-unit:hover { border-color: #444; }
+
+/* The Gear Emoji */
+.gear-icon { font-size: 14px; opacity: 0.3; transition: transform 0.2s ease-out, opacity 0.2s; }
+
+/* The Number */
+.gear-num { font-size: 20px; font-weight: bold; color: #555; margin-top: 2px; }
+
+/* Active State (When a gear moves) */
+.gear-unit.active { border-color: #0f0; box-shadow: 0 0 8px rgba(0, 255, 0, 0.1); background: #101410; }
+.gear-unit.active .gear-icon { opacity: 1; transform: rotate(45deg); }
+.gear-unit.active .gear-num { color: #0f0; text-shadow: 0 0 5px #0f0; }
+
+/* Instruction */
+#instruction { font-size: 12px; color: #333; margin-top: 10px; letter-spacing: 1px; }
+#instruction span { color: #555; text-decoration: underline; }
+
+/* Labels for orientation */
+#labels { display: flex; justify-content: space-between; width: 100%; margin-top: -10px; font-size: 10px; color: #222; padding: 0 5px; box-sizing: border-box; }
+</style>
+</head>
+<body>
+
+<div id="container">
+    <h1>THE GOOGOL GRID</h1>
+    <div id="stopwatch">00:00:00</div>
+    
+    <div id="gear-grid"></div>
+    
+    <div id="labels">
+        <span>GEAR #100</span>
+        <span>GEAR #1</span>
+    </div>
+
+    <div id="instruction">PRESS <span>[SPACEBAR]</span> TO ACTIVATE</div>
+</div>
+
+<script>
+const TOTAL_GEARS = 100;
+const RATIO = 10; // Exact 10:1 reduction logic
+
+// State: Array storing the digit (0-9) for each gear
+let digits = new Array(TOTAL_GEARS).fill(0);
+let startTime = Date.now();
+
+// DOM References
+const grid = document.getElementById('gear-grid');
+const stopwatch = document.getElementById('stopwatch');
+const units = []; // Array to hold DOM elements
+
+function init() {
+    // Build the Grid
+    for (let i = 0; i < TOTAL_GEARS; i++) {
+        let unit = document.createElement('div');
+        unit.className = 'gear-unit';
+        // Inner HTML: Emoji + Number
+        unit.innerHTML = `
+            <div class="gear-icon">⚙️</div>
+            <div class="gear-num">0</div>
+        `;
+        
+        grid.appendChild(unit);
+        units.push(unit);
+    }
+    
+    // Event Listeners
+    window.addEventListener('keydown', handleInput);
+    setInterval(updateStopwatch, 1000);
+}
+
+function handleInput(e) {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        // Start the mechanical chain reaction at Gear 1 (Index 0)
+        incrementGear(0);
+    }
+}
+
+// Recursive function to handle the exact logic of the gears
+function incrementGear(index) {
+    // Safety check: If we somehow go past Gear 100, stop.
+    if (index >= TOTAL_GEARS) return;
+
+    // 1. Increment the current gear's digit
+    digits[index]++;
+
+    // 2. Visual Feedback (Spin & Glow)
+    let unit = units[index];
+    let numDisplay = unit.querySelector('.gear-num');
+    
+    // Add active class for CSS effects
+    unit.classList.add('active');
+    
+    // Check for Logic Carry (The 10:1 Ratio)
+    if (digits[index] === RATIO) {
+        // This gear has completed a full cycle (10 steps).
+        // It resets to 0 and pushes the NEXT gear by 1.
+        digits[index] = 0;
+        numDisplay.innerText = 0;
+        
+        // Trigger the next gear in the chain
+        incrementGear(index + 1);
+    } else {
+        // Just update the number
+        numDisplay.innerText = digits[index];
+    }
+
+    // Remove active class after animation
+    setTimeout(() => {
+        unit.classList.remove('active');
+    }, 150);
+}
+
+function updateStopwatch() {
+    let s = Math.floor((Date.now() - startTime) / 1000);
+    let h = String(Math.floor(s / 3600)).padStart(2, '0');
+    let m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+    let sec = String(s % 60).padStart(2, '0');
+    stopwatch.innerText = `${h}:${m}:${sec}`;
+}
+
+init();
+</script>
+</body>
+</html>
